@@ -8,17 +8,53 @@
         border: 1px dashed black;
       }
     </style>
+
+    <script src="/_ah/channel/jsapi"></script>
   </head>
   <body>
     <p>Hello, world!</p>
 
-    <canvas id="c" height="500" width="500">
+    <canvas id="c" height="{{ height }}" width="{{ width }}">
       <p>Looks like your browser is not supported. :(</p>
     </canvas>
 
     <script>
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
+      var boundingRect = canvas.getBoundingClientRect();
+
+      var lineSegments = [];
+
+      var channel = new goog.appengine.Channel("{{ token }}");
+      var socket = channel.open();
+
+      var sendLineSegments = function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "/update?room_key={{ room_key }}", true);
+        xhr.send(JSON.stringify(lineSegments));
+      };
+
+      var getMousePos = function(event) {
+        return {
+          x: event.clientX - boundingRect.left,
+          y: event.clientY - boundingRect.top,
+        };
+      };
+
+      var onMouseMove = function(event) {
+        var pos = getMousePos(event);
+        lineSegments.push([pos.x, pos.y]);
+      };
+
+      canvas.addEventListener("mousedown", function(event) {
+        canvas.addEventListener("mousemove", onMouseMove);
+      });
+
+      canvas.addEventListener("mouseup", function(event) {
+        canvas.removeEventListener("mousemove", onMouseMove);
+        sendLineSegments();
+        lineSegments = [];
+      });
     </script>
 
   </body>
