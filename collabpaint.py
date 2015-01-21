@@ -1,6 +1,7 @@
 import constants
 import random
 import os
+import httplib
 import jinja2
 import json
 import webapp2
@@ -8,9 +9,6 @@ import webapp2
 from google.appengine.api import channel
 from google.appengine.api import users
 from google.appengine.ext import ndb
-
-# TODO(aryann): Allow more than one room.
-DEFAULT_ROOM = 'default-room'
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
@@ -50,9 +48,15 @@ class Canvas(webapp2.RequestHandler):
             self.redirect(users.create_login_url(self.request.uri))
             return
 
-        # TODO(aryann): Check the query param "room_key" and use it here.
-        room = Room.get_or_insert(DEFAULT_ROOM)
-        client_id = GenerateClientId(DEFAULT_ROOM)
+        room_key = self.request.get('room_key')
+        if not room_key:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.write('Missing query parameter "room_key".')
+            self.response.set_status(httplib.BAD_REQUEST)
+            return
+
+        room = Room.get_or_insert(room_key)
+        client_id = GenerateClientId(room_key)
         room.client_ids.append(client_id)
         room.put()
 
