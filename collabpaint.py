@@ -1,4 +1,5 @@
 import constants
+import random
 import os
 import jinja2
 import json
@@ -18,8 +19,12 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 
+def GenerateClientId():
+    return random.randrange(- 2 ** 63, 2 ** 63 - 1)
+
+
 class Room(ndb.Model):
-    users = ndb.UserProperty(repeated=True)
+    client_ids = ndb.IntegerProperty(repeated=True)
 
 
 class LineSegments(ndb.Model):
@@ -38,14 +43,14 @@ class Canvas(webapp2.RequestHandler):
             return
 
         # TODO(aryann): Check the query param "room_key" and use it here.
-        r = Room.get_or_insert(DEFAULT_ROOM)
-        if user not in r.users:
-            r.users.append(user)
-            r.put()
+        room = Room.get_or_insert(DEFAULT_ROOM)
+        client_id = GenerateClientId()
+        room.client_ids.append(client_id)
+        room.put()
 
-        token = channel.create_channel(r.key.string_id() + user.user_id())
+        token = channel.create_channel(room.key.string_id() + str(client_id))
         template_values = {
-            'room_key': r.key.string_id(),
+            'room_key': room.key.string_id(),
             'width': constants.WIDTH,
             'height': constants.HEIGHT,
             'token': token,
@@ -59,7 +64,12 @@ class CanvasUpdater(webapp2.RequestHandler):
     def post(self):
         room_key = self.request.get('room_key')
         user = users.get_current_user()
-        xs, ys = zip(*json.loads(self.request.body))
+
+        line_segments = json.loads(self.request.body)
+        if not line_segments:
+            return
+
+        xs, ys = zip(*line_segments)
 
         line_segments = LineSegments(
             room=ndb.Key(Room, room_key),
@@ -68,8 +78,10 @@ class CanvasUpdater(webapp2.RequestHandler):
             user=user)
         line_segments.put()
 
-        # TODO(aryann): Broadcast the changes to all users in the
-        # room.
+        room = Room.get_by_id(room_key)
+        for client_id in room.client_ids:
+            channel.send_message(room_key + str(client_id),
+                                 self.request.body)
 
 
 application = webapp2.WSGIApplication([
