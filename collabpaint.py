@@ -75,14 +75,26 @@ class LinesHandler(webapp2.RequestHandler):
 
     def get(self):
         room_key = self.request.get('room_key')
-        print room_key
         client_id = self.request.get('client_id')
 
+        # The following snippet breaks up the sending of the initial
+        # data, so that we do not exceed the message length limits of
+        # the channel.
         lines = []
+        payload = None
         for line_segment in LineSegments.GetLineSegmentsForRoom(
             room_key).fetch():
             lines.append(line_segment.GetPoints())
-        channel.send_message(client_id, json.dumps(lines))
+            new_payload = json.dumps(lines)
+            if len(new_payload) > channel.MAXIMUM_MESSAGE_LENGTH and payload:
+                channel.send_message(client_id, payload)
+                payload = None
+                lines = [lines[-1]]
+            else:
+                payload = new_payload
+
+        if payload:
+            channel.send_message(client_id, payload)
 
     def post(self):
         room_key = self.request.get('room_key')
