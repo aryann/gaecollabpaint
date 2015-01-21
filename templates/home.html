@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 
 {% block body %}
+  <datalist id="room_names">
+    {% for room_name in room_names %}
+      <option value="{{ room_name }}" />
+    {% endfor %}
+  </datalist>
+
   <form action="room" method="get">
     <label for="room_key">
       Enter an existing room key or enter a new one:
     </label>
-    <input type="text" id="room_key" name="room_key" autofocus />
+    <input type="text" id="room_key" name="room_key" list="room_names" autofocus />
     <button type="submit">Go!</button>
   </form>
 {% endblock %}

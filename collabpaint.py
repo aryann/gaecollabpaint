@@ -47,8 +47,18 @@ class Home(webapp2.RequestHandler):
         if not user:
             self.redirect(users.create_login_url(self.request.uri))
             return
+
+        # TODO(aryann): This will not scale as the number of rooms
+        # increases.
+        room_names = []
+        for r in Room.query().fetch():
+            room_names.append(r.key.string_id())
+
+        template_values = {
+            'room_names': room_names,
+        }
         template = JINJA_ENVIRONMENT.get_template('home.html')
-        self.response.write(template.render())
+        self.response.write(template.render(template_values))
 
 
 class Canvas(webapp2.RequestHandler):
