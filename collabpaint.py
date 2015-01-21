@@ -40,6 +40,17 @@ class LineSegments(ndb.Model):
             ancestor=ndb.Key(Room, room_key)).order(LineSegments.date_time)
 
 
+class Home(webapp2.RequestHandler):
+
+    def get(self):
+        user = users.get_current_user()
+        if not user:
+            self.redirect(users.create_login_url(self.request.uri))
+            return
+        template = JINJA_ENVIRONMENT.get_template('home.html')
+        self.response.write(template.render())
+
+
 class Canvas(webapp2.RequestHandler):
 
     def get(self):
@@ -120,6 +131,7 @@ class LinesHandler(webapp2.RequestHandler):
 
 
 application = webapp2.WSGIApplication([
-        ('/', Canvas),
+        ('/', Home),
+        ('/room', Canvas),
         ('/lines', LinesHandler),
 ], debug=True)

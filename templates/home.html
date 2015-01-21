@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <form action="room" method="get">
+    <label for="room_key">
+      Enter an existing room key or enter a new one:
+    </label>
+    <input type="text" id="room_key" name="room_key" autofocus />
+    <button type="submit">Go!</button>
+  </form>
+{% endblock %}
