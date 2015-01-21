@@ -25,29 +25,33 @@
 
       var lineSegments = [];
 
-      var channel = new goog.appengine.Channel("{{ token }}");
-      var socket = channel.open();
-      socket.onmessage = function(message) {
-        var points = JSON.parse(message.data);
-        if (!points) {
-          return;
-        }
-        console.log(points);
-        var from = points[0];
-        for (var i = 1; i < points.length; i++) {
-          var to = points[i];
-          context.beginPath();
-          context.moveTo(from[0], from[1]);
-          context.lineTo(to[0], to[1]);
-          context.stroke();
-          from = to;
-        }
+      var sendPayload = function(method, payload) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(
+            method,
+            "/lines?room_key={{ room_key }}&client_id={{ token }}",
+            true);
+        xhr.send(payload || "");
       };
 
-      var sendLineSegments = function() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', "/update?room_key={{ room_key }}", true);
-        xhr.send(JSON.stringify(lineSegments));
+      var channel = new goog.appengine.Channel("{{ token }}");
+      var socket = channel.open();
+      socket.onopen = function() {
+        sendPayload("GET");
+      }
+      socket.onmessage = function(message) {
+        var lines = JSON.parse(message.data);
+        for (var i = 0; i < lines.length; i++) {
+          var from = lines[i][0];
+          for (var j = 1; j < lines[i].length; j++) {
+            var to = lines[i][j];
+            context.beginPath();
+            context.moveTo(from[0], from[1]);
+            context.lineTo(to[0], to[1]);
+            context.stroke();
+            from = to;
+          }
+        }
       };
 
       var getMousePos = function(event) {
@@ -69,7 +73,7 @@
       canvas.addEventListener("mouseup", function(event) {
         canvas.removeEventListener("mousemove", onMouseMove);
         if (lineSegments) {
-          sendLineSegments();
+          sendPayload("POST", JSON.stringify(lineSegments));
           lineSegments = [];
         }
       });
