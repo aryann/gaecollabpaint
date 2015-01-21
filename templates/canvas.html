@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block style %}
+  #c {
+    border: 1px dashed black;
+  }
+{% endblock %}
+
 {% block head %}
   <script src="/_ah/channel/jsapi"></script>
 {% endblock %}
@@ -74,6 +80,10 @@
 
     canvas.addEventListener("mouseup", function(event) {
       canvas.removeEventListener("mousemove", onMouseMove);
+
+      // TODO(aryann): Consider sending multiple requests if the size
+      // of the payload ends up exceeding 32K characters (the max message
+      // length allowed on a channel).
       if (lineSegments) {
 	sendPayload("POST", JSON.stringify(lineSegments));
 	lineSegments = [];
