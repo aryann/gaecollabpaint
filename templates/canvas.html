@@ -1,92 +1,83 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
+{% extends "base.html" %}
 
-    <style type="text/css">
-      #c {
-        border: 1px dashed black;
+{% block head %}
+  <script src="/_ah/channel/jsapi"></script>
+{% endblock %}
+
+{% block body %}
+  <canvas id="c" height="{{ height }}" width="{{ width }}">
+    <p>Looks like your browser is not supported. :(</p>
+  </canvas>
+
+  <script>
+    var canvas = document.getElementById("c");
+    var context = canvas.getContext("2d");
+    var boundingRect = canvas.getBoundingClientRect();
+
+    var lineSegments = [];
+
+    var sendPayload = function(method, payload) {
+      var xhr = new XMLHttpRequest();
+      xhr.open(
+	  method,
+	  "/lines?room_key={{ room_key }}&client_id={{ token }}",
+	  true);
+      xhr.send(payload || "");
+    };
+
+    var drawLine = function(from, to) {
+      context.beginPath();
+      context.moveTo(from[0], from[1]);
+      context.lineTo(to[0], to[1]);
+      context.stroke();
+    };
+
+    var channel = new goog.appengine.Channel("{{ token }}");
+    var socket = channel.open();
+    socket.onopen = function() {
+      sendPayload("GET");
+    }
+    socket.onmessage = function(message) {
+      var lines = JSON.parse(message.data);
+      for (var i = 0; i < lines.length; i++) {
+	var from = lines[i][0];
+	for (var j = 1; j < lines[i].length; j++) {
+	  var to = lines[i][j];
+	  context.strokeStyle = "black";
+	  drawLine(from, to);
+	  from = to;
+	}
       }
-    </style>
+    };
 
-    <script src="/_ah/channel/jsapi"></script>
-  </head>
-  <body>
-    <canvas id="c" height="{{ height }}" width="{{ width }}">
-      <p>Looks like your browser is not supported. :(</p>
-    </canvas>
-
-    <script>
-      var canvas = document.getElementById("c");
-      var context = canvas.getContext("2d");
-      var boundingRect = canvas.getBoundingClientRect();
-
-      var lineSegments = [];
-
-      var sendPayload = function(method, payload) {
-        var xhr = new XMLHttpRequest();
-        xhr.open(
-            method,
-            "/lines?room_key={{ room_key }}&client_id={{ token }}",
-            true);
-        xhr.send(payload || "");
+    var getMousePos = function(event) {
+      return {
+	x: event.clientX - boundingRect.left,
+	y: event.clientY - boundingRect.top,
       };
+    };
 
-      var drawLine = function(from, to) {
-        context.beginPath();
-        context.moveTo(from[0], from[1]);
-        context.lineTo(to[0], to[1]);
-        context.stroke();
-      };
-
-      var channel = new goog.appengine.Channel("{{ token }}");
-      var socket = channel.open();
-      socket.onopen = function() {
-        sendPayload("GET");
+    var onMouseMove = function(event) {
+      var pos = getMousePos(event);
+      lineSegments.push([pos.x, pos.y]);
+      if (lineSegments.length > 1) {
+	var from = lineSegments[lineSegments.length - 2];
+	var to = lineSegments[lineSegments.length - 1];
+	context.strokeStyle = "grey";
+	drawLine(from, to);
       }
-      socket.onmessage = function(message) {
-        var lines = JSON.parse(message.data);
-        for (var i = 0; i < lines.length; i++) {
-          var from = lines[i][0];
-          for (var j = 1; j < lines[i].length; j++) {
-            var to = lines[i][j];
-            context.strokeStyle = "black";
-            drawLine(from, to);
-            from = to;
-          }
-        }
-      };
+    };
 
-      var getMousePos = function(event) {
-        return {
-          x: event.clientX - boundingRect.left,
-          y: event.clientY - boundingRect.top,
-        };
-      };
+    canvas.addEventListener("mousedown", function(event) {
+      canvas.addEventListener("mousemove", onMouseMove);
+    });
 
-      var onMouseMove = function(event) {
-        var pos = getMousePos(event);
-        lineSegments.push([pos.x, pos.y]);
-        if (lineSegments.length > 1) {
-          var from = lineSegments[lineSegments.length - 2];
-          var to = lineSegments[lineSegments.length - 1];
-          context.strokeStyle = "grey";
-          drawLine(from, to);
-        }
-      };
-
-      canvas.addEventListener("mousedown", function(event) {
-        canvas.addEventListener("mousemove", onMouseMove);
-      });
-
-      canvas.addEventListener("mouseup", function(event) {
-        canvas.removeEventListener("mousemove", onMouseMove);
-        if (lineSegments) {
-          sendPayload("POST", JSON.stringify(lineSegments));
-          lineSegments = [];
-        }
-      });
-    </script>
-
-  </body>
-</html>
+    canvas.addEventListener("mouseup", function(event) {
+      canvas.removeEventListener("mousemove", onMouseMove);
+      if (lineSegments) {
+	sendPayload("POST", JSON.stringify(lineSegments));
+	lineSegments = [];
+      }
+    });
+  </script>
+{% endblock %}
