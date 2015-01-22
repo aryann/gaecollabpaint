@@ -18,7 +18,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 
 def GenerateClientId(room_name):
-    return room_name + str(random.randrange(- 2 ** 63, 2 ** 63 - 1))
+    return str(random.randrange(- 2 ** 63, 2 ** 63 - 1)) + '-' + room_name
 
 
 class Room(ndb.Model):
@@ -140,8 +140,26 @@ class LinesHandler(webapp2.RequestHandler):
                 client_id, json.dumps([line_segments.GetPoints()]))
 
 
+class ChannelConnected(webapp2.RequestHandler):
+
+    def post(self):
+        pass
+
+
+class ChannelDisconnected(webapp2.RequestHandler):
+
+    def post(self):
+        client_id = self.request.get('from')
+        room_key = client_id.split('-', 1)[1]
+        room = Room.get_by_id(room_key)
+        room.client_ids.remove(client_id)
+        room.put()
+
+
 application = webapp2.WSGIApplication([
         ('/', Home),
         ('/room', Canvas),
         ('/lines', LinesHandler),
-], debug=True)
+        ('/_ah/channel/connected/', ChannelConnected),
+        ('/_ah/channel/disconnected/', ChannelDisconnected),
+])

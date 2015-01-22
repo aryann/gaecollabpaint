@@ -1,5 +1,5 @@
 application: collabpaint
-version: 1
+version: 2
 runtime: python27
 api_version: 1
 threadsafe: true
@@ -13,3 +13,6 @@ libraries:
   version: 2.5.2
 - name: jinja2
   version: 2.6
+
+inbound_services:
+- channel_presence
