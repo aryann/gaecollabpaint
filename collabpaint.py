@@ -18,7 +18,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 
 def GenerateClientId(room_name):
-    return str(random.randrange(- 2 ** 63, 2 ** 63 - 1)) + '-' + room_name
+    return str(random.randrange(- 2 ** 63, 2 ** 63 - 1)) + '.' + room_name
 
 
 class Room(ndb.Model):
@@ -150,7 +150,7 @@ class ChannelDisconnected(webapp2.RequestHandler):
 
     def post(self):
         client_id = self.request.get('from')
-        room_key = client_id.split('-', 1)[1]
+        room_key = client_id.split('.', 1)[1]
         room = Room.get_by_id(room_key)
         room.client_ids.remove(client_id)
         room.put()
