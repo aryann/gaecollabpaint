@@ -3,14 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <style type="text/css">
+      #butter-bar {
+        margin-bottom: 5px;
+        padding: 5px;
+      }
+
+      #butter-bar p {
+        margin: 0;
+        text-align: center;
+      }
+
       #c {
-        border: 1px dashed black;
+        border: 2px dotted black;
+        display: block;
+        margin: 0 auto;
       }
     </style>
     <script src="/_ah/channel/jsapi"></script>
   </head>
   <body>
-    <p>Share <a href="{{ url }}">{{ url }}</a> with a friend, and start drawing!</p>
+    <div id="butter-bar">
+      <p>
+        Click in the box below to start drawing. Collaborate with a
+        friend by sharing <a href="{{ url }}">{{ url }}</a>!
+      </p>
+    </div>
 
     <canvas id="c" height="{{ height }}" width="{{ width }}">
       <p>Looks like your browser is not supported. :(</p>
