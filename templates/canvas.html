@@ -58,8 +58,8 @@
 
     var getMousePos = function(event) {
       return {
-	x: event.clientX - boundingRect.left,
-	y: event.clientY - boundingRect.top,
+	x: Math.round(event.clientX - boundingRect.left),
+	y: Math.round(event.clientY - boundingRect.top),
       };
     };
 
