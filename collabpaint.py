@@ -65,6 +65,7 @@ class Canvas(webapp2.RequestHandler):
             'width': constants.WIDTH,
             'height': constants.HEIGHT,
             'token': token,
+            'url': self.request.url,
         }
         template = JINJA_ENVIRONMENT.get_template('canvas.html')
         self.response.write(template.render(template_values))
