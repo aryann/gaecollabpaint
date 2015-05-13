@@ -4,10 +4,14 @@ import os
 import httplib
 import jinja2
 import json
+import string
 import webapp2
 
 from google.appengine.api import channel
 from google.appengine.ext import ndb
+
+ROOM_KEY_ALPHABET = string.letters + string.digits
+ROOM_KEY_LENGTH = 10
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
@@ -16,8 +20,13 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 
-def GenerateClientId(room_name):
+def generate_client_id(room_name):
     return str(random.randrange(- 2 ** 63, 2 ** 63 - 1)) + '.' + room_name
+
+
+def generate_room_key():
+    return ''.join(random.choice(ROOM_KEY_ALPHABET)
+                   for _ in xrange(ROOM_KEY_LENGTH))
 
 
 class Room(ndb.Model):
@@ -38,34 +47,15 @@ class LineSegments(ndb.Model):
             ancestor=ndb.Key(Room, room_key)).order(LineSegments.date_time)
 
 
-class Home(webapp2.RequestHandler):
-
-    def get(self):
-        # TODO(aryann): This will not scale as the number of rooms
-        # increases.
-        room_names = []
-        for r in Room.query().fetch():
-            room_names.append(r.key.string_id())
-
-        template_values = {
-            'room_names': room_names,
-        }
-        template = JINJA_ENVIRONMENT.get_template('home.html')
-        self.response.write(template.render(template_values))
-
-
 class Canvas(webapp2.RequestHandler):
 
-    def get(self):
-        room_key = self.request.get('room_key')
+    def get(self, room_key):
         if not room_key:
-            self.response.headers['Content-Type'] = 'text/plain'
-            self.response.write('Missing query parameter "room_key".')
-            self.response.set_status(httplib.BAD_REQUEST)
+            self.redirect('/' + generate_room_key())
             return
 
         room = Room.get_or_insert(room_key)
-        client_id = GenerateClientId(room_key)
+        client_id = generate_client_id(room_key)
         room.client_ids.append(client_id)
         room.put()
 
@@ -143,9 +133,8 @@ class ChannelDisconnected(webapp2.RequestHandler):
 
 
 application = webapp2.WSGIApplication([
-        ('/', Home),
-        ('/room', Canvas),
         ('/lines', LinesHandler),
         ('/_ah/channel/connected/', ChannelConnected),
         ('/_ah/channel/disconnected/', ChannelDisconnected),
+        ('/(?P<room_key>.*)', Canvas),
 ])
