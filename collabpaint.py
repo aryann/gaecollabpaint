@@ -59,6 +59,11 @@ class Canvas(webapp2.RequestHandler):
         room.client_ids.append(client_id)
         room.put()
 
+        lines = []
+        for line_segment in LineSegments.GetLineSegmentsForRoom(
+            room_key).fetch():
+            lines.append(line_segment.GetPoints())
+
         token = channel.create_channel(client_id)
         template_values = {
             'room_key': room.key.string_id(),
@@ -66,35 +71,13 @@ class Canvas(webapp2.RequestHandler):
             'height': constants.HEIGHT,
             'token': token,
             'url': self.request.url,
+            'existing_lines': json.dumps(lines),
         }
         template = JINJA_ENVIRONMENT.get_template('canvas.html')
         self.response.write(template.render(template_values))
 
 
 class LinesHandler(webapp2.RequestHandler):
-
-    def get(self):
-        room_key = self.request.get('room_key')
-        client_id = self.request.get('client_id')
-
-        # The following snippet breaks up the sending of the initial
-        # data, so that we do not exceed the message length limits of
-        # the channel.
-        lines = []
-        payload = None
-        for line_segment in LineSegments.GetLineSegmentsForRoom(
-            room_key).fetch():
-            lines.append(line_segment.GetPoints())
-            new_payload = json.dumps(lines)
-            if len(new_payload) > channel.MAXIMUM_MESSAGE_LENGTH and payload:
-                channel.send_message(client_id, payload)
-                payload = None
-                lines = [lines[-1]]
-            else:
-                payload = new_payload
-
-        if payload:
-            channel.send_message(client_id, payload)
 
     def post(self):
         room_key = self.request.get('room_key')

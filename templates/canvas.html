@@ -43,11 +43,8 @@
 
     var channel = new goog.appengine.Channel("{{ token }}");
     var socket = channel.open();
-    socket.onopen = function() {
-      sendPayload("GET");
-    }
-    socket.onmessage = function(message) {
-      var lines = JSON.parse(message.data);
+
+    var drawLines = function(lines) {
       for (var i = 0; i < lines.length; i++) {
 	var from = lines[i][0];
 	for (var j = 1; j < lines[i].length; j++) {
@@ -57,6 +54,11 @@
 	  from = to;
 	}
       }
+    };
+    drawLines({{ existing_lines }});
+
+    socket.onmessage = function(message) {
+      drawLines(JSON.parse(message.data));
     };
 
     var getMousePos = function(event) {
