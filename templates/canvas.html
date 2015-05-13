@@ -1,98 +1,97 @@
-{% extends "base.html" %}
-
-{% block style %}
-  #c {
-    border: 1px dashed black;
-  }
-{% endblock %}
-
-{% block head %}
-  <script src="/_ah/channel/jsapi"></script>
-{% endblock %}
-
-{% block body %}
-
-  <p>Share <a href="{{ url }}">{{ url }}</a> with a friend, and start drawing!</p>
-
-  <canvas id="c" height="{{ height }}" width="{{ width }}">
-    <p>Looks like your browser is not supported. :(</p>
-  </canvas>
-
-  <script>
-    var canvas = document.getElementById("c");
-    var context = canvas.getContext("2d");
-    var boundingRect = canvas.getBoundingClientRect();
-
-    var lineSegments = [];
-
-    var sendPayload = function(method, payload) {
-      var xhr = new XMLHttpRequest();
-      xhr.open(
-	  method,
-	  "/lines?room_key={{ room_key }}&client_id={{ token }}",
-	  true);
-      xhr.send(payload || "");
-    };
-
-    var drawLine = function(from, to) {
-      context.beginPath();
-      context.moveTo(from[0], from[1]);
-      context.lineTo(to[0], to[1]);
-      context.stroke();
-    };
-
-    var channel = new goog.appengine.Channel("{{ token }}");
-    var socket = channel.open();
-
-    var drawLines = function(lines) {
-      for (var i = 0; i < lines.length; i++) {
-	var from = lines[i][0];
-	for (var j = 1; j < lines[i].length; j++) {
-	  var to = lines[i][j];
-	  context.strokeStyle = "black";
-	  drawLine(from, to);
-	  from = to;
-	}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style type="text/css">
+      #c {
+        border: 1px dashed black;
       }
-    };
-    drawLines({{ existing_lines }});
+    </style>
+    <script src="/_ah/channel/jsapi"></script>
+  </head>
+  <body>
+    <p>Share <a href="{{ url }}">{{ url }}</a> with a friend, and start drawing!</p>
 
-    socket.onmessage = function(message) {
-      drawLines(JSON.parse(message.data));
-    };
+    <canvas id="c" height="{{ height }}" width="{{ width }}">
+      <p>Looks like your browser is not supported. :(</p>
+    </canvas>
 
-    var getMousePos = function(event) {
-      return {
-	x: Math.round(event.clientX - boundingRect.left),
-	y: Math.round(event.clientY - boundingRect.top),
+    <script>
+      var canvas = document.getElementById("c");
+      var context = canvas.getContext("2d");
+      var boundingRect = canvas.getBoundingClientRect();
+
+      var lineSegments = [];
+
+      var sendPayload = function(method, payload) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(
+            method,
+            "/lines?room_key={{ room_key }}&client_id={{ token }}",
+            true);
+        xhr.send(payload || "");
       };
-    };
 
-    var onMouseMove = function(event) {
-      var pos = getMousePos(event);
-      lineSegments.push([pos.x, pos.y]);
-      if (lineSegments.length > 1) {
-	var from = lineSegments[lineSegments.length - 2];
-	var to = lineSegments[lineSegments.length - 1];
-	context.strokeStyle = "grey";
-	drawLine(from, to);
-      }
-    };
+      var drawLine = function(from, to) {
+        context.beginPath();
+        context.moveTo(from[0], from[1]);
+        context.lineTo(to[0], to[1]);
+        context.stroke();
+      };
 
-    canvas.addEventListener("mousedown", function(event) {
-      canvas.addEventListener("mousemove", onMouseMove);
-    });
+      var channel = new goog.appengine.Channel("{{ token }}");
+      var socket = channel.open();
 
-    canvas.addEventListener("mouseup", function(event) {
-      canvas.removeEventListener("mousemove", onMouseMove);
+      var drawLines = function(lines) {
+        for (var i = 0; i < lines.length; i++) {
+          var from = lines[i][0];
+          for (var j = 1; j < lines[i].length; j++) {
+            var to = lines[i][j];
+            context.strokeStyle = "black";
+            drawLine(from, to);
+            from = to;
+          }
+        }
+      };
+      drawLines({{ existing_lines }});
 
-      // TODO(aryann): Consider sending multiple requests if the size
-      // of the payload ends up exceeding 32K characters (the max message
-      // length allowed on a channel).
-      if (lineSegments) {
-	sendPayload("POST", JSON.stringify(lineSegments));
-	lineSegments = [];
-      }
-    });
-  </script>
-{% endblock %}
+      socket.onmessage = function(message) {
+        drawLines(JSON.parse(message.data));
+      };
+
+      var getMousePos = function(event) {
+        return {
+          x: Math.round(event.clientX - boundingRect.left),
+          y: Math.round(event.clientY - boundingRect.top),
+        };
+      };
+
+      var onMouseMove = function(event) {
+        var pos = getMousePos(event);
+        lineSegments.push([pos.x, pos.y]);
+        if (lineSegments.length > 1) {
+          var from = lineSegments[lineSegments.length - 2];
+          var to = lineSegments[lineSegments.length - 1];
+          context.strokeStyle = "grey";
+          drawLine(from, to);
+        }
+      };
+
+      canvas.addEventListener("mousedown", function(event) {
+        canvas.addEventListener("mousemove", onMouseMove);
+      });
+
+      canvas.addEventListener("mouseup", function(event) {
+        canvas.removeEventListener("mousemove", onMouseMove);
+
+        // TODO(aryann): Consider sending multiple requests if the size
+        // of the payload ends up exceeding 32K characters (the max message
+        // length allowed on a channel).
+        if (lineSegments) {
+          sendPayload("POST", JSON.stringify(lineSegments));
+          lineSegments = [];
+        }
+      });
+    </script>
+  </body>
+</html>
