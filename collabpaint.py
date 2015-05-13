@@ -7,7 +7,6 @@ import json
 import webapp2
 
 from google.appengine.api import channel
-from google.appengine.api import users
 from google.appengine.ext import ndb
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -29,7 +28,6 @@ class LineSegments(ndb.Model):
     date_time = ndb.DateTimeProperty(auto_now_add=True)
     xs = ndb.IntegerProperty(repeated=True)
     ys = ndb.IntegerProperty(repeated=True)
-    user = ndb.UserProperty()
 
     def GetPoints(self):
         return zip(self.xs, self.ys)
@@ -43,11 +41,6 @@ class LineSegments(ndb.Model):
 class Home(webapp2.RequestHandler):
 
     def get(self):
-        user = users.get_current_user()
-        if not user:
-            self.redirect(users.create_login_url(self.request.uri))
-            return
-
         # TODO(aryann): This will not scale as the number of rooms
         # increases.
         room_names = []
@@ -64,11 +57,6 @@ class Home(webapp2.RequestHandler):
 class Canvas(webapp2.RequestHandler):
 
     def get(self):
-        user = users.get_current_user()
-        if not user:
-            self.redirect(users.create_login_url(self.request.uri))
-            return
-
         room_key = self.request.get('room_key')
         if not room_key:
             self.response.headers['Content-Type'] = 'text/plain'
@@ -119,7 +107,6 @@ class LinesHandler(webapp2.RequestHandler):
 
     def post(self):
         room_key = self.request.get('room_key')
-        user = users.get_current_user()
 
         line_segments = json.loads(self.request.body)
         if not line_segments:
@@ -130,8 +117,7 @@ class LinesHandler(webapp2.RequestHandler):
         line_segments = LineSegments(
             parent=ndb.Key(Room, room_key),
             xs=xs,
-            ys=ys,
-            user=user)
+            ys=ys)
         line_segments.put()
 
         room = Room.get_by_id(room_key)
