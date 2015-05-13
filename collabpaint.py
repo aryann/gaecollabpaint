@@ -38,11 +38,11 @@ class LineSegments(ndb.Model):
     xs = ndb.IntegerProperty(repeated=True)
     ys = ndb.IntegerProperty(repeated=True)
 
-    def GetPoints(self):
+    def get_points(self):
         return zip(self.xs, self.ys)
 
     @classmethod
-    def GetLineSegmentsForRoom(cls, room_key):
+    def get_line_segments_for_room(cls, room_key):
         return LineSegments.query(
             ancestor=ndb.Key(Room, room_key)).order(LineSegments.date_time)
 
@@ -60,9 +60,9 @@ class Canvas(webapp2.RequestHandler):
         room.put()
 
         lines = []
-        for line_segment in LineSegments.GetLineSegmentsForRoom(
+        for line_segment in LineSegments.get_line_segments_for_room(
             room_key).fetch():
-            lines.append(line_segment.GetPoints())
+            lines.append(line_segment.get_points())
 
         token = channel.create_channel(client_id)
         template_values = {
@@ -97,7 +97,7 @@ class LinesHandler(webapp2.RequestHandler):
         room = Room.get_by_id(room_key)
         for client_id in room.client_ids:
             channel.send_message(
-                client_id, json.dumps([line_segments.GetPoints()]))
+                client_id, json.dumps([line_segments.get_points()]))
 
 
 class ChannelConnected(webapp2.RequestHandler):
