@@ -36,8 +36,6 @@
     <script>
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
-      var boundingRect = canvas.getBoundingClientRect();
-
       var lineSegments = [];
 
       var sendPayload = function(method, payload) {
@@ -78,8 +76,8 @@
 
       var getMousePos = function(event) {
         return {
-          x: Math.round(event.clientX - boundingRect.left),
-          y: Math.round(event.clientY - boundingRect.top),
+          x: Math.round(event.clientX - canvas.getBoundingClientRect().left),
+          y: Math.round(event.clientY - canvas.getBoundingClientRect().top),
         };
       };
 
