@@ -33,45 +33,38 @@
       <p>Looks like your browser is not supported. :(</p>
     </canvas>
 
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js"></script>
     <script>
+      // Initialize Firebase
+      var config = {
+          apiKey: "AIzaSyDz1uysDhXT_dYju5GtuSsc-HUI1LM-BV8",
+          authDomain: "collabpaint.firebaseapp.com",
+          databaseURL: "https://collabpaint.firebaseio.com",
+          projectId: "collabpaint",
+          storageBucket: "",
+          messagingSenderId: "754027051738"
+      };
+      firebase.initializeApp(config);
+      var database = firebase.database();
+      var roomRef = firebase.database().ref('line-segments/{{ room_key }}/');
+
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
       var lineSegments = [];
 
-      var sendPayload = function(method, payload) {
-        var xhr = new XMLHttpRequest();
-        xhr.open(
-            method,
-            "/lines?room_key={{ room_key }}&client_id={{ token }}",
-            true);
-        xhr.send(payload || "");
-      };
-
-      var drawLine = function(from, to) {
+      var drawLine = function(from, to, color) {
+        context.strokeStyle = "black";
         context.beginPath();
         context.moveTo(from[0], from[1]);
         context.lineTo(to[0], to[1]);
         context.stroke();
       };
 
-      var channel = new goog.appengine.Channel("{{ token }}");
-      var socket = channel.open();
-
       var drawLines = function(lines) {
-        for (var i = 0; i < lines.length; i++) {
-          var from = lines[i][0];
-          for (var j = 1; j < lines[i].length; j++) {
-            var to = lines[i][j];
-            context.strokeStyle = "black";
-            drawLine(from, to);
-            from = to;
-          }
+        for (var i = 0; i < lines.length - 1; i++) {
+          drawLine(lines[i], lines[i + 1], "black");
         }
-      };
-      drawLines({{ existing_lines }});
-
-      socket.onmessage = function(message) {
-        drawLines(JSON.parse(message.data));
       };
 
       var getMousePos = function(event) {
@@ -87,10 +80,13 @@
         if (lineSegments.length > 1) {
           var from = lineSegments[lineSegments.length - 2];
           var to = lineSegments[lineSegments.length - 1];
-          context.strokeStyle = "grey";
-          drawLine(from, to);
+          drawLine(from, to, "grey");
         }
       };
+
+      roomRef.on('child_added', function(lineSegments) {
+          drawLines(lineSegments.val());
+      });
 
       canvas.addEventListener("mousedown", function(event) {
         canvas.addEventListener("mousemove", onMouseMove);
@@ -99,11 +95,8 @@
       canvas.addEventListener("mouseup", function(event) {
         canvas.removeEventListener("mousemove", onMouseMove);
 
-        // TODO(aryann): Consider sending multiple requests if the size
-        // of the payload ends up exceeding 32K characters (the max message
-        // length allowed on a channel).
         if (lineSegments) {
-          sendPayload("POST", JSON.stringify(lineSegments));
+          roomRef.push().set(lineSegments);
           lineSegments = [];
         }
       });
