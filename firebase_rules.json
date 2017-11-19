@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "line-segments": {
+      "$room_key": {
+          ".read": true,
+          ".write": true,
+          ".validate": "$room_key.matches(/^[a-f0-9]{16}$/)",
+        "$segment": {
+          "$point": {
+              ".validate": "newData.hasChildren(['0', '1']) &&
+                            newData.child('0').isNumber() &&
+                            newData.child('1').isNumber()",
+          }
+        }
+      }
+    }
+  }
+}
