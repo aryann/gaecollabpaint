@@ -100,18 +100,29 @@
           drawLines(lineSegments.val());
       });
 
-      canvas.addEventListener("mousedown", function(event) {
-        canvas.addEventListener("mousemove", onMouseMove);
-      });
 
-      canvas.addEventListener("mouseup", function(event) {
-        canvas.removeEventListener("mousemove", onMouseMove);
+      var eventListeners = [
+        {down: "mousedown", up: "mouseup"},  // Desktop
+        {down: "touchstart", up: "touchend"},  // Mobile
+      ];
+      for (var i = 0; i < eventListeners.length; i++) {
+          var events = eventListeners[i];
+          canvas.addEventListener(events.down, function(event) {
+              canvas.addEventListener("mousemove", onMouseMove);
+              canvas.addEventListener("touchmove", onMouseMove);
+          });
+          canvas.addEventListener(events.up, function(event) {
+              canvas.removeEventListener("mousemove", onMouseMove);
+              canvas.removeEventListener("touchmove", onMouseMove);
+              if (lineSegments) {
+                  roomRef.push().set(lineSegments);
+                  lineSegments = [];
+              }
+          });
+      }
 
-        if (lineSegments) {
-          roomRef.push().set(lineSegments);
-          lineSegments = [];
-        }
-      });
+
+
     </script>
   </body>
 </html>
