@@ -69,7 +69,6 @@
       var database = firebase.database();
       var roomRef = firebase.database().ref('line-segments/{{ room_key }}/');
 
-      var body = document.getElementsByTagName("body")[0];
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
       context.canvas.width = window.innerWidth;
@@ -91,22 +90,29 @@
         }
       };
 
-      var getMousePos = function(event) {
+      var getPositionFromEvent = function(event) {
         return {
-          x: Math.round(event.clientX - body.offsetLeft),
-          y: Math.round(event.clientY - body.offsetTop),
+          x: Math.round(event.clientX - document.body.offsetLeft),
+          y: Math.round(event.clientY - document.body.offsetTop),
         };
       };
 
-      var onMouseMove = function(event) {
-        var pos = getMousePos(event);
-        lineSegments.push([pos.x, pos.y]);
+      var onMove = function(position) {
+        lineSegments.push([position.x, position.y]);
         if (lineSegments.length > 1) {
           var from = lineSegments[lineSegments.length - 2];
           var to = lineSegments[lineSegments.length - 1];
           drawLine(from, to, "grey");
         }
       };
+
+      var onMouseMove = function(event) {
+        onMove(getPositionFromEvent(event));
+      };
+
+      var onTouchMove = function(event) {
+        onMove(getPositionFromEvent(event.touches[0]));
+      }
 
       roomRef.on('child_added', function(lineSegments) {
           drawLines(lineSegments.val());
@@ -118,13 +124,13 @@
       ];
       for (var i = 0; i < eventListeners.length; i++) {
           var events = eventListeners[i];
-          body.addEventListener(events.down, function(event) {
-              body.addEventListener("mousemove", onMouseMove);
-              body.addEventListener("touchmove", onMouseMove);
+          document.body.addEventListener(events.down, function(event) {
+              document.body.addEventListener("mousemove", onMouseMove);
+              document.body.addEventListener("touchmove", onTouchMove);
           });
-          body.addEventListener(events.up, function(event) {
-              body.removeEventListener("mousemove", onMouseMove);
-              body.removeEventListener("touchmove", onMouseMove);
+          document.body.addEventListener(events.up, function(event) {
+              document.body.removeEventListener("mousemove", onMouseMove);
+              document.body.removeEventListener("touchmove", onTouchMove);
               if (lineSegments) {
                   roomRef.push().set(lineSegments);
                   lineSegments = [];
