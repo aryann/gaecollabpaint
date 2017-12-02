@@ -7,9 +7,13 @@
           ".validate": "$room_key.matches(/^[a-f0-9]{16}$/)",
         "$segment": {
           "$point": {
-              ".validate": "newData.hasChildren(['0', '1']) &&
-                            newData.child('0').isNumber() &&
-                            newData.child('1').isNumber()",
+              ".validate": "$point.matches(/^[0-9]+$/) &&
+                          newData.hasChildren(['0', '1']) &&
+                          newData.child('0').isNumber() &&
+                          newData.child('1').isNumber()",
+            "0": {".validate": true},
+            "1": {".validate": true},
+            "$other": {".validate": false},
           }
         }
       }
