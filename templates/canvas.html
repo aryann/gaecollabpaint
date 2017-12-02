@@ -69,6 +69,7 @@
       var database = firebase.database();
       var roomRef = firebase.database().ref('line-segments/{{ room_key }}/');
 
+      var body = document.getElementsByTagName("body")[0];
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
       context.canvas.width = window.innerWidth;
@@ -92,8 +93,8 @@
 
       var getMousePos = function(event) {
         return {
-          x: Math.round(event.clientX - canvas.offsetLeft),
-          y: Math.round(event.clientY - canvas.offsetTop),
+          x: Math.round(event.clientX - body.offsetLeft),
+          y: Math.round(event.clientY - body.offsetTop),
         };
       };
 
@@ -111,18 +112,25 @@
           drawLines(lineSegments.val());
       });
 
-      canvas.addEventListener("mousedown", function(event) {
-        canvas.addEventListener("mousemove", onMouseMove);
-      });
-
-      canvas.addEventListener("mouseup", function(event) {
-        canvas.removeEventListener("mousemove", onMouseMove);
-
-        if (lineSegments) {
-          roomRef.push().set(lineSegments);
-          lineSegments = [];
-        }
-      });
+      var eventListeners = [
+        {down: "mousedown", up: "mouseup"},  // Desktop
+        {down: "touchstart", up: "touchend"},  // Mobile
+      ];
+      for (var i = 0; i < eventListeners.length; i++) {
+          var events = eventListeners[i];
+          body.addEventListener(events.down, function(event) {
+              body.addEventListener("mousemove", onMouseMove);
+              body.addEventListener("touchmove", onMouseMove);
+          });
+          body.addEventListener(events.up, function(event) {
+              body.removeEventListener("mousemove", onMouseMove);
+              body.removeEventListener("touchmove", onMouseMove);
+              if (lineSegments) {
+                  roomRef.push().set(lineSegments);
+                  lineSegments = [];
+              }
+          });
+      }
     </script>
   </body>
 </html>
