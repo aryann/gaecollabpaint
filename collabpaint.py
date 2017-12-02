@@ -1,4 +1,3 @@
-import constants
 import random
 import os
 import httplib
@@ -41,8 +40,6 @@ class Canvas(webapp2.RequestHandler):
 
         template_values = {
             'room_key': room_key,
-            'width': constants.WIDTH,
-            'height': constants.HEIGHT,
             'url': self.request.url,
         }
         template = JINJA_ENVIRONMENT.get_template('canvas.html')
