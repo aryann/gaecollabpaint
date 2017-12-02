@@ -92,8 +92,8 @@
 
       var getPositionFromEvent = function(event) {
         return {
-          x: Math.round(event.clientX - document.body.offsetLeft),
-          y: Math.round(event.clientY - document.body.offsetTop),
+          x: Math.round(event.clientX - canvas.offsetLeft),
+          y: Math.round(event.clientY - canvas.offsetTop),
         };
       };
 
@@ -124,13 +124,13 @@
       ];
       for (var i = 0; i < eventListeners.length; i++) {
           var events = eventListeners[i];
-          document.body.addEventListener(events.down, function(event) {
-              document.body.addEventListener("mousemove", onMouseMove);
-              document.body.addEventListener("touchmove", onTouchMove);
+          canvas.addEventListener(events.down, function(event) {
+              canvas.addEventListener("mousemove", onMouseMove);
+              canvas.addEventListener("touchmove", onTouchMove);
           });
-          document.body.addEventListener(events.up, function(event) {
-              document.body.removeEventListener("mousemove", onMouseMove);
-              document.body.removeEventListener("touchmove", onTouchMove);
+          canvas.addEventListener(events.up, function(event) {
+              canvas.removeEventListener("mousemove", onMouseMove);
+              canvas.removeEventListener("touchmove", onTouchMove);
               if (lineSegments) {
                   roomRef.push().set(lineSegments);
                   lineSegments = [];
