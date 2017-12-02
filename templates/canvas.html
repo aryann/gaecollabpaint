@@ -4,9 +4,16 @@
     <title>Collabpaint</title>
     <meta charset="utf-8" />
     <style type="text/css">
+      body {
+        margin: 0;
+      }
+
       #butter-bar {
-        margin-bottom: 5px;
+        position: absolute;
+        left: 0;
+        background-color: yellow;
         padding: 5px;
+        z-index: 1;
       }
 
       #butter-bar p {
@@ -15,9 +22,10 @@
       }
 
       #c {
-        border: 2px dotted black;
-        display: block;
-        margin: 0 auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
       }
     </style>
 
@@ -37,11 +45,11 @@
     <div id="butter-bar">
       <p>
         Click in the box below to start drawing. Collaborate with a
-        friend by sharing <a href="{{ url }}">{{ url }}</a>!
+        friend by sharing: <a href="{{ url }}">{{ url }}</a>
       </p>
     </div>
 
-    <canvas id="c" height="{{ height }}" width="{{ width }}">
+    <canvas id="c">
       <p>Looks like your browser is not supported. :(</p>
     </canvas>
 
@@ -63,6 +71,9 @@
 
       var canvas = document.getElementById("c");
       var context = canvas.getContext("2d");
+      context.canvas.width = window.innerWidth;
+      context.canvas.height = window.innerHeight;
+
       var lineSegments = [];
 
       var drawLine = function(from, to, color) {
@@ -81,8 +92,8 @@
 
       var getMousePos = function(event) {
         return {
-          x: Math.round(event.clientX - canvas.getBoundingClientRect().left),
-          y: Math.round(event.clientY - canvas.getBoundingClientRect().top),
+          x: Math.round(event.clientX - canvas.offsetLeft),
+          y: Math.round(event.clientY - canvas.offsetTop),
         };
       };
 
